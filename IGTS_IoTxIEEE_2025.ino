@@ -6,9 +6,9 @@
 #include "addons/TokenHelper.h"
 #include "addons/RTDBHelper.h"
 
-// Informasi API KEY dan DATABASE URL
-#define API_KEY "AIzaSyBIBIYjxrg3KbHMmFjiio-TKTqxTQgEC74"
-#define DATABASE_URL "https://igtsxiotxieee-default-rtdb.firebaseio.com/"
+// GANTI DENGAN DATA PRIBADI DI FILE TERPISAH ATAU GUNAKAN SECRET
+#define API_KEY "YOUR_FIREBASE_API_KEY"
+#define DATABASE_URL "https://your-project-id.firebaseio.com/"
 
 // Objek Firebase
 FirebaseData fbdo;
@@ -31,7 +31,7 @@ const int trigPin = 14;
 const int echoPin = 27;
 
 int rainThreshold = 3500; // Nilai threshold hujan
-int setpointUltra = 10;  // Nilai default setpoint dari Firebase
+int setpointUltra = 10;   // Nilai default setpoint dari Firebase
 
 // Fungsi baca sensor Ultrasonic
 long readUltrasonicDistance() {
@@ -56,23 +56,20 @@ void setup() {
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
 
-  // ---------------------------
   // WiFi Manager setup untuk WiFi otomatis
   WiFiManager wm;
-  bool res = wm.autoConnect("Rumah6", "rumahpintarku"); // Ganti SSID & password AP sementara
+  bool res = wm.autoConnect("SmartHomeAP", "password1234"); // Ganti SSID & password AP sementara
   if (!res) {
     Serial.println("Gagal koneksi WiFi, restart ESP...");
     ESP.restart();
   } else {
     Serial.println("WiFi Terkoneksi!");
   }
-  // ---------------------------
 
   // Firebase setup
   config.api_key = API_KEY;
   config.database_url = DATABASE_URL;
 
-  // Registrasi ke Firebase (Anonymous)
   if (Firebase.signUp(&config, &auth, "", "")) {
     Serial.println("Firebase SignUp OK");
     signupOK = true;
@@ -80,10 +77,7 @@ void setup() {
     Serial.printf("Firebase SignUp Gagal: %s\n", config.signer.signupError.message.c_str());
   }
 
-  // Aktifkan callback token
   config.token_status_callback = tokenStatusCallback;
-
-  // Mulai koneksi Firebase
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
 }
@@ -92,7 +86,6 @@ void loop() {
   if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 10000 || sendDataPrevMillis == 0)) {
     sendDataPrevMillis = millis();
 
-    // ---------------------------
     // Baca Sensor
     int rainValue = analogRead(rainSensorPin);
     long distance = readUltrasonicDistance();
@@ -102,7 +95,6 @@ void loop() {
     Serial.print("Distance: ");
     Serial.println(distance);
 
-    // ---------------------------
     // Kirim data sensor ke Firebase
     if (Firebase.RTDB.setInt(&fbdo, "/sensor6/rain", rainValue)) {
       Serial.println("Rain data sent.");
@@ -116,36 +108,33 @@ void loop() {
       Serial.println("Failed to send distance data: " + fbdo.errorReason());
     }
 
-    // ---------------------------
     // Ambil setpoint ultrasonic dari Firebase
-        if (Firebase.RTDB.getString(&fbdo, "/setpoint6/ultrasonic")){
-      String angkastring = fbdo.stringData(); // Mendapatkan data string dari Firebase
-      int angka = angkastring.toInt();
+    if (Firebase.RTDB.getString(&fbdo, "/setpoint6/ultrasonic")) {
+      String angkaStr = fbdo.stringData();
+      int angka = angkaStr.toInt();
       setpointUltra = angka;
       Serial.print("Setpoint dari Firebase: ");
-      Serial.println(angka); // Menampilkan data string ke Serial Monitor
-    }else {
+      Serial.println(angka);
+    } else {
       Serial.println("Gagal ambil setpoint ultrasonic: " + fbdo.errorReason());
     }
 
-    // ---------------------------
     // Kontrol Servo Hujan
     if (rainValue < rainThreshold) {
-      servoRain.write(0); // Tutup
+      servoRain.write(0);
       Serial.println("Servo Hujan: Tertutup (karena hujan)");
     } else {
-      servoRain.write(90); // Buka
+      servoRain.write(90);
       Serial.println("Servo Hujan: Terbuka");
     }
 
-    // ---------------------------
     // Kontrol Servo Ultrasonic
     if (distance < setpointUltra) {
-      servoUltra.write(90); // Buka
+      servoUltra.write(90);
       Serial.println("Servo Ultrasonic: Tertutup (jarak dekat)");
     } else {
-      servoUltra.write(0); // Tutup
-      Serial.println("Servo Ultrasonic: terbuka");
+      servoUltra.write(0);
+      Serial.println("Servo Ultrasonic: Terbuka");
     }
   }
 }
