@@ -2,6 +2,7 @@
 
 🚀 **IGTS Smart Home Project**  
 Proyek ini merupakan implementasi Internet of Things (IoT) yang memanfaatkan **ESP32**, **Firebase**, dan sensor untuk mengontrol servo secara otomatis berdasarkan data hujan dan jarak.
+Proyek ini berkolaborasi dengan IEEE UB Student Branch, berupa proker utama yaitu IoTxIEEE Goes To School.
 
 ---
 
